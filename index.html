@@ -92,22 +92,21 @@
         // Set baseline time into input field placeholder
         document.getElementById('manual-timestamp').value = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-        // Helper function to keep dropdown choices updated when new simulated incidents arrive
+        // Fixed ID references here to completely match 'incident-select'
         function updateDropdownOptions() {
-            const selectDropdown = document.getElementById('incident_select');
+            const selectDropdown = document.getElementById('incident-select');
             const rows = document.querySelectorAll('#table-body tr');
             
-            // Rebuild selection choices based on current rows
             let htmlOptions = '';
             rows.forEach(row => {
                 const sysId = row.getAttribute('sys_id');
                 const incNum = row.cells[0].innerText;
                 htmlOptions += `<option value="${sysId}">${incNum}</option>`;
             });
-            document.getElementById('incident-select').innerHTML = htmlOptions;
+            selectDropdown.innerHTML = htmlOptions;
         }
 
-        // Quick Auto-update option targeting the very first row entry
+        // Auto-update option targeting the very first row entry
         function simulateUpdate() {
             const firstRow = document.querySelector('#table-body tr');
             if(!firstRow) return;
@@ -121,7 +120,7 @@
             document.getElementById('sim-status').innerText = `Updated ${incNum} text to current time: ${now}`;
         }
 
-        // Advanced Manual Override utilizing the selection dropdown targeting elements dynamically
+        // Manual Override utilizing the selection dropdown targeting elements dynamically
         function manuallyUpdateRow() {
             const selectedSysId = document.getElementById('incident-select').value;
             const targetRowTimeCell = document.querySelector(`tr[sys_id="${selectedSysId}"] td[data-type="glide_date_time"]`);
@@ -129,12 +128,12 @@
             const customValue = document.getElementById('manual-timestamp').value;
             
             if(targetRowTimeCell) {
-                targetRowTimeCell.innerText = customValue; [cite: 83]
+                targetRowTimeCell.innerText = customValue;
                 document.getElementById('sim-status').innerText = `Manually changed ${targetRowIncName} cell HTML to: "${customValue}"`;
             }
         }
 
-        // Generates new simulation row item entry
+        // Generates new simulation row item entry safely
         function simulateNewRow() {
             const tbody = document.getElementById('table-body');
             const newSysId = Math.random().toString(16).substring(2);
@@ -154,7 +153,7 @@
             `;
             tbody.insertBefore(tr, tbody.firstChild);
             
-            // Re-run configuration tracker to map the newly added entry choice option dropdown menu list automatically
+            // Re-run configuration tracker safely now
             updateDropdownOptions();
             
             document.getElementById('sim-status').innerText = `Added ${incNum} at ${now.split(' ')[1]}`;
