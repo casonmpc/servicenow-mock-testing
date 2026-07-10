@@ -10,7 +10,9 @@
         .sim-panel { background: #e0f2fe; padding: 12px; border: 1px solid #bae6fd; border-radius: 4px; max-width: 1100px; margin: 0 auto 20px auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .sim-panel button { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
         .sim-panel button:hover { background: #0369a1; }
-        .sim-panel input { padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; width: 180px; font-family: monospace; }
+        .sim-panel input, .sim-panel select { padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; font-family: monospace; }
+        .sim-panel input { width: 180px; }
+        .sim-panel select { background: white; cursor: pointer; }
         .sim-divider { color: #bae6fd; margin: 0 4px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
         th { background-color: #f1f5f9; color: #475569; font-weight: 600; padding: 10px; border-bottom: 2px solid #cbd5e1; }
@@ -23,12 +25,19 @@
 
     <div class="sim-panel">
         <strong>⚡ Simulation Controls:</strong>
-        <button onclick="simulateUpdate()">Auto-Update (Now)</button>
+        <button onclick="simulateUpdate()">Auto-Update Top Row (Now)</button>
         <button onclick="simulateNewRow()">Simulate New Task Arriving</button>
         
         <span class="sim-divider">|</span>
         
-        <label for="manual-timestamp" style="font-size: 13px; color: #1e3a8a;"><strong>Edit INC0010001 Date:</strong></label>
+        <label for="incident-select" style="font-size: 13px; color: #1e3a8a;"><strong>Target INC:</strong></label>
+        <select id="incident-select">
+            <option value="9d38c1031b30df400b65a9b71d4bcb01">INC0010001</option>
+            <option value="8f45d2142c41ef511c76b0c82e5cdc02">INC0010002</option>
+            <option value="7e23b1031b30df400b65a9b71d4bfa99">INC0010003</option>
+        </select>
+
+        <label for="manual-timestamp" style="font-size: 13px; color: #1e3a8a;"><strong>New Date:</strong></label>
         <input type="text" id="manual-timestamp" placeholder="YYYY-MM-DD HH:MM:SS">
         <button onclick="manuallyUpdateRow()" style="background-color: #059669;">Apply Change</button>
         
@@ -80,30 +89,52 @@
         const names = ["Alex Rivera", "Jordan Blake", "Taylor Morgan"];
         const priorities = ["1 - Critical", "2 - High", "3 - Moderate", "4 - Low", "5 - Planning"];
 
-        // Pre-populate input field placeholder tracking current real-ish time format
+        // Set baseline time into input field placeholder
         document.getElementById('manual-timestamp').value = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-        // Auto-update button (Sets it to the exact current time)
+        // Helper function to keep dropdown choices updated when new simulated incidents arrive
+        function updateDropdownOptions() {
+            const selectDropdown = document.getElementById('incident_select');
+            const rows = document.querySelectorAll('#table-body tr');
+            
+            // Rebuild selection choices based on current rows
+            let htmlOptions = '';
+            rows.forEach(row => {
+                const sysId = row.getAttribute('sys_id');
+                const incNum = row.cells[0].innerText;
+                htmlOptions += `<option value="${sysId}">${incNum}</option>`;
+            });
+            document.getElementById('incident-select').innerHTML = htmlOptions;
+        }
+
+        // Quick Auto-update option targeting the very first row entry
         function simulateUpdate() {
-            const firstRowTimeCell = document.querySelector('tr[sys_id="9d38c1031b30df400b65a9b71d4bcb01"] td[data-type="glide_date_time"]');
+            const firstRow = document.querySelector('#table-body tr');
+            if(!firstRow) return;
+            
+            const firstRowTimeCell = firstRow.querySelector('td[data-type="glide_date_time"]');
+            const incNum = firstRow.cells[0].innerText;
             const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
             
             firstRowTimeCell.innerText = now;
             document.getElementById('manual-timestamp').value = now;
-            document.getElementById('sim-status').innerText = `Updated INC0010001 text to current time: ${now}`;
+            document.getElementById('sim-status').innerText = `Updated ${incNum} text to current time: ${now}`;
         }
 
-        // Manual override function using the input box field value
+        // Advanced Manual Override utilizing the selection dropdown targeting elements dynamically
         function manuallyUpdateRow() {
-            const firstRowTimeCell = document.querySelector('tr[sys_id="9d38c1031b30df400b65a9b71d4bcb01"] td[data-type="glide_date_time"]');
+            const selectedSysId = document.getElementById('incident-select').value;
+            const targetRowTimeCell = document.querySelector(`tr[sys_id="${selectedSysId}"] td[data-type="glide_date_time"]`);
+            const targetRowIncName = document.querySelector(`tr[sys_id="${selectedSysId}"] td`).innerText;
             const customValue = document.getElementById('manual-timestamp').value;
             
-            // Updates the DOM element's text directly
-            firstRowTimeCell.innerText = customValue;
-            document.getElementById('sim-status').innerText = `Manually changed INC0010001 cell HTML to: "${customValue}"`;
+            if(targetRowTimeCell) {
+                targetRowTimeCell.innerText = customValue; [cite: 83]
+                document.getElementById('sim-status').innerText = `Manually changed ${targetRowIncName} cell HTML to: "${customValue}"`;
+            }
         }
 
-        // Appends a completely brand new incident row to the table grid
+        // Generates new simulation row item entry
         function simulateNewRow() {
             const tbody = document.getElementById('table-body');
             const newSysId = Math.random().toString(16).substring(2);
@@ -122,6 +153,10 @@
                 <td class="vt" data-type="glide_date_time">${now}</td>
             `;
             tbody.insertBefore(tr, tbody.firstChild);
+            
+            // Re-run configuration tracker to map the newly added entry choice option dropdown menu list automatically
+            updateDropdownOptions();
+            
             document.getElementById('sim-status').innerText = `Added ${incNum} at ${now.split(' ')[1]}`;
         }
     </script>
